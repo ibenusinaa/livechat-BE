@@ -9,16 +9,16 @@ const app = express()
 app.use(cors())
 const httpApp = http.createServer(app)
 const io = socket(httpApp)
-
+require('dotenv').config()
 const PORT = process.env.PORT || 5000 //buat deploy di heroku (process.env.PORT)
 
 // deploy backend harus ada procfile sama process.env
 const db = mysql.createConnection({
-    host: 'sql6.freemysqlhosting.net',
-    user: 'sql6409073',
-    password: '32eBfdFIfT',
-    database: 'sql6409073',
-    port: 3306
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    database: process.env.DB_NAME,
+    port: process.env.DB_SQLPORT
 })
 
 // Routes
