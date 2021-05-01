@@ -12,6 +12,7 @@ const io = socket(httpApp)
 
 const PORT = process.env.PORT || 5000 //buat deploy di heroku (process.env.PORT)
 
+// deploy backend harus ada procfile sama process.env
 const db = mysql.createConnection({
     host: 'sql6.freemysqlhosting.net',
     user: 'sql6409073',
@@ -82,7 +83,7 @@ io.on('connection', (socket) => {
                     let res = []
                     resultChat.map((value, index) => {
                         res.push({
-                            created_at: value.created_at.toLocaleString(),
+                            created_at: value.created_at,
                             id: value.id,
                             message: value.message,
                             room: value.room,
@@ -113,21 +114,23 @@ io.on('connection', (socket) => {
         })
 
         let room = userConnected[index].room
+        let date = new Date().toLocaleString('id-ID')
 
         let dataToSend = {
             user: message.user, 
             message: message.message,
-            socket_id: socket.id,
-            room: room
+            room: room,
+            created_at: date,
+            socket_id: socket.id
         }
         // roomName, socket.id, username, message, created_At
-        let date = new Date().toLocaleString()
 
         db.query('INSERT INTO chat_history SET ?', dataToSend, (err, result) => {
             try {
                 if(err) throw err
-
-                socket.to(room).emit('send-message-back', {user: message.user, message: message.message, room: room, created_at: date})
+  
+                socket.to(room).emit('send-message-back', {user: message.user, message: message.message, room: room, created_at: date
+            })
                 socket.emit('send-message-back', {user: message.user, message: message.message, room: room, created_at: date})
             } catch (error) {
                 console.log(error)
