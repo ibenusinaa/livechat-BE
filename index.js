@@ -14,7 +14,6 @@ const PORT = process.env.PORT || 5000 //buat deploy di heroku (process.env.PORT)
 
 // deploy backend harus ada procfile sama process.env
 const db = mysql.createConnection({
-    host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
@@ -32,8 +31,10 @@ io.on('connection', (socket) => {
     console.log('user connected with id ' + socket.id)
     // USER JOIN
     socket.on('user-join', ({name, room}) => {
+
         let checkTotalUserInRoom = userConnected.filter((value) => value.room === room)
         console.log(checkTotalUserInRoom)
+        
         if(checkTotalUserInRoom.length >= 4){
             return socket.emit('total-user', checkTotalUserInRoom.length)
         }else{
@@ -89,6 +90,8 @@ io.on('connection', (socket) => {
                             room: value.room,
                             socket_id: value.socket_id,
                             user: value.user,
+                            replied_user: value.replied_user,
+                            replied_message: value.replied_message
                         })
                     })
                     socket.emit('history', res)           
@@ -121,17 +124,24 @@ io.on('connection', (socket) => {
             message: message.message,
             room: room,
             created_at: date,
-            socket_id: socket.id
+            socket_id: socket.id,
+            replied_user: message.replied_user,
+            replied_message: message.replied_message
         }
         // roomName, socket.id, username, message, created_At
 
         db.query('INSERT INTO chat_history SET ?', dataToSend, (err, result) => {
             try {
                 if(err) throw err
-  
-                socket.to(room).emit('send-message-back', {user: message.user, message: message.message, room: room, created_at: date
-            })
-                socket.emit('send-message-back', {user: message.user, message: message.message, room: room, created_at: date})
+                
+                // buat ngirim ke user lain
+                socket.to(room).emit('send-message-back', {user: message.user, message: message.message, room: room, created_at: date, replied_user: message.replied_user,
+                    replied_message: message.replied_message
+                })
+
+                // buat ngirim ke diri sendiri
+                socket.emit('send-message-back', {user: message.user, message: message.message, room: room, created_at: date, replied_user: message.replied_user,
+                    replied_message: message.replied_message})
             } catch (error) {
                 console.log(error)
                
